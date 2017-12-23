@@ -32,21 +32,17 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 			return _litePeer;
 		}
 	}
-
-
 	[SerializeField]
 	private InputField playerNameField;
 	[SerializeField]
 	private Text userAnnounce;
 
 	private Dictionary<int, string> actorDic = new Dictionary<int, string>();   //用于存放已经加入游戏的玩家信息
-
 	void Start()
 	{
 		//photonPeer.Connect("192.168.0.100:5055", "Lite");                 //连接
 		litePeer.Connect("192.168.0.100:5055", "Lite");
 	}
-
 	void Update()
 	{
 		//photonPeer.Service();               //用来监听服务器的响应，必须不停执行
@@ -74,12 +70,19 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 		Hashtable tGameProperties = new Hashtable();
 
 		Hashtable tActorProperties = new Hashtable();   //玩家属性
-		tActorProperties.Add((byte)'n', playerNameField.text);
+		tActorProperties.Add(ChatEventKey.UserName, playerNameField.text);
 		litePeer.OpJoin("Unity_Photon", tGameProperties, tActorProperties, true);          //参数1：设置游戏(房间)的名称；参数2：传递游戏的属性；参数3：传递玩家的属性；参数4：是否广播玩家属性
 	}
 	public void LitePeerLeave()         //离开游戏房间,之后客户端可以进行资源清理等操作
 	{
 		litePeer.OpLeave();
+	}
+	public void LiteChat()
+	{
+		Hashtable tChatMessage = new Hashtable();
+		string tFieldText = "hhhh";
+		tChatMessage.Add(ChatEventKey.ChatMessage, tFieldText);
+		litePeer.OpRaiseEvent((byte)ChatEventCode.Chat, tChatMessage, true);
 	}
 
 	public void DebugReturn(DebugLevel _level, string _message)
@@ -94,8 +97,8 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 		{
 			case LiteEventCode.Join:
 			{
-				string tActorName = ((Hashtable)_eventData.Parameters[LiteEventKey.ActorProperties])[(byte)'n'].ToString();
-				int tActorNum = (int)_eventData.Parameters[LiteEventKey.ActorNr];
+				string tActorName = ((Hashtable)_eventData.Parameters[LiteEventKey.ActorProperties])[(byte)ChatEventKey.UserName].ToString();     //获取玩家姓名
+				int tActorNum = (int)_eventData.Parameters[LiteEventKey.ActorNr];   //获取玩家编号
 				userAnnounce.text = "玩家" + tActorName + "进入了游戏";
 				if(!actorDic.ContainsKey(tActorNum))        //加入新入玩家信息
 				{
@@ -109,11 +112,27 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 			break;
 			case LiteEventCode.Leave:
 			{
+				//Debug.LogError("!!!!");
 				int tActorNum = (int)_eventData.Parameters[LiteEventKey.ActorNr];
-				string tActorName = actorDic[tActorNum];
-				userAnnounce.text = "玩家:" + tActorName + "离开了游戏";
-				actorDic.Remove(tActorNum);
-
+				Debug.LogError("!!!!" + tActorNum);
+				if(actorDic.ContainsKey(tActorNum))
+				{
+					string tActorName = actorDic[tActorNum];
+					userAnnounce.text = "玩家:" + tActorName + "离开了游戏";
+					actorDic.Remove(tActorNum);
+				}
+			}
+			break;
+			case (byte)ChatEventCode.Chat:
+			{
+				Hashtable tContentTable = (Hashtable)_eventData.Parameters[LiteEventKey.Data];
+				string tContentStr = tContentTable[(byte)ChatEventKey.ChatMessage].ToString();
+				int tActorNum = (int)_eventData.Parameters[LiteEventKey.ActorNr];
+				if(actorDic.ContainsKey(tActorNum))
+				{
+					string tUserName = actorDic[tActorNum];
+					userAnnounce.text = "玩家" + tUserName + "说：" + tContentStr;
+				}
 			}
 			break;
 		}
@@ -132,8 +151,7 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 			break;
 			case LiteOpCode.Leave:
 			{
-
-				Debug.LogError("离开游戏房间");
+				//Debug.Log("离开游戏房间");
 			}
 			break;
 			default:
@@ -216,3 +234,21 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 
 
 }
+public enum ChatEventCode : byte            //仿照LiteEventCode自定义用于聊天功能的ChatEventCode
+{
+	Chat = 10,
+}
+public enum ChatEventKey : byte             //自定义用于聊天功能的ChatEventKey
+{
+	UserName = 11,
+	ChatMessage = 12,
+
+}
+
+
+
+
+
+
+
+
