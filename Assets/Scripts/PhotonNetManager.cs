@@ -4,11 +4,12 @@ using UnityEngine;
 using ExitGames.Client.Photon;      //引用Photon命名空间
 using ExitGames.Client.Photon.Lite; //引用Lite命名空间
 using System;
+using UnityEngine.UI;
 
 public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现Photon接口
 {
 	private PhotonPeer _photonPeer;
-	private PhotonPeer photonPeer
+	private PhotonPeer photonPeer       //通用的Photon操作类
 	{
 		get
 		{
@@ -19,14 +20,37 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 			return _photonPeer;
 		}
 	}
+	private LitePeer _litePeer;          //比PhotonPeer更强大的基于游戏房间的操作类
+	private LitePeer litePeer
+	{
+		get
+		{
+			if(null == _litePeer)
+			{
+				_litePeer = new LitePeer(this, ConnectionProtocol.Udp);
+			}
+			return _litePeer;
+		}
+	}
+
+
+	[SerializeField]
+	private InputField playerNameField;
+	[SerializeField]
+	private Text userAnnounce;
+
+	private Dictionary<int, string> actorDic = new Dictionary<int, string>();   //用于存放已经加入游戏的玩家信息
+
 	void Start()
 	{
-		photonPeer.Connect("192.168.0.100:5055", "Lite");                 //连接
+		//photonPeer.Connect("192.168.0.100:5055", "Lite");                 //连接
+		litePeer.Connect("192.168.0.100:5055", "Lite");
 	}
 
 	void Update()
 	{
-		photonPeer.Service();               //用来监听服务器的响应，必须不停执行
+		//photonPeer.Service();               //用来监听服务器的响应，必须不停执行
+		litePeer.Service();
 	}
 	public void SendPhotonMessage()                                     //发送请求至Photon
 	{
@@ -34,15 +58,30 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 		tParaDic[LiteOpKey.GameId] = "1";
 		photonPeer.OpCustom(LiteOpKey.GameId, tParaDic, true);//调用客户端向服务器发送请求的函数//重载1：参数1:命令代码;参数2:命令带有的参数;参数3:命令是否可信(一般为true)
 	}
-	public void SendOperationReqMsg(OperationRequest _operationRequest = null)
+	public void SendOperationReqMsg()       //使用OperationRequest封装请求信息
 	{
-		_operationRequest = new OperationRequest();
-		_operationRequest.OperationCode = LiteOpCode.Join;
+		OperationRequest operationRequest = new OperationRequest();
+		operationRequest.OperationCode = LiteOpCode.Join;
 		Dictionary<byte, object> tParaDic = new Dictionary<byte, object>();
-		_operationRequest.Parameters = tParaDic;
-		_operationRequest.Parameters[LiteOpKey.GameId] = "2";
-		photonPeer.OpCustom(_operationRequest, true, 0, true);
+		operationRequest.Parameters = tParaDic;
+		operationRequest.Parameters[LiteOpKey.GameId] = "2";
+		photonPeer.OpCustom(operationRequest, true, 0, false);
 	}
+	public void LitePeerJoin()           //使用LitePeer发送消息至服务器,加入游戏房间
+	{
+		//litePeer.OpJoin("Unity_Photon");
+
+		Hashtable tGameProperties = new Hashtable();
+
+		Hashtable tActorProperties = new Hashtable();   //玩家属性
+		tActorProperties.Add((byte)'n', playerNameField.text);
+		litePeer.OpJoin("Unity_Photon", tGameProperties, tActorProperties, true);          //参数1：设置游戏(房间)的名称；参数2：传递游戏的属性；参数3：传递玩家的属性；参数4：是否广播玩家属性
+	}
+	public void LitePeerLeave()         //离开游戏房间,之后客户端可以进行资源清理等操作
+	{
+		litePeer.OpLeave();
+	}
+
 	public void DebugReturn(DebugLevel _level, string _message)
 	{
 		Debug.LogError(_level.ToString() + "...." + _message);
@@ -51,25 +90,67 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 	public void OnEvent(EventData _eventData)
 	{
 		Debug.LogError("事件触发：" + _eventData.Parameters[LiteOpKey.ActorNr]);
+		switch(_eventData.Code)
+		{
+			case LiteEventCode.Join:
+			{
+				string tActorName = ((Hashtable)_eventData.Parameters[LiteEventKey.ActorProperties])[(byte)'n'].ToString();
+				int tActorNum = (int)_eventData.Parameters[LiteEventKey.ActorNr];
+				userAnnounce.text = "玩家" + tActorName + "进入了游戏";
+				if(!actorDic.ContainsKey(tActorNum))        //加入新入玩家信息
+				{
+					actorDic.Add(tActorNum, tActorName);
+				}
+				else
+				{
+					actorDic[tActorNum] = tActorName;       //更新已入玩家信息
+				}
+			}
+			break;
+			case LiteEventCode.Leave:
+			{
+				int tActorNum = (int)_eventData.Parameters[LiteEventKey.ActorNr];
+				string tActorName = actorDic[tActorNum];
+				userAnnounce.text = "玩家:" + tActorName + "离开了游戏";
+				actorDic.Remove(tActorNum);
+
+			}
+			break;
+		}
 	}
 
 	public void OnOperationResponse(OperationResponse _operationResponse)
 	{
-		Debug.Log("服务器返回响应：" + _operationResponse.ToString() + "   响应类型：" + _operationResponse.OperationCode);
+		Debug.Log("服务器返回响应：" + _operationResponse.Parameters + "   响应类型：" + _operationResponse.OperationCode);
 		switch(_operationResponse.OperationCode)
 		{
 			case LiteOpCode.Join:
-			int PlayerNum = (int)_operationResponse.Parameters[LiteOpKey.ActorNr];  //返回进入游戏房间的玩家的编号
-			Debug.LogError("进入游戏房间,玩家编号：" + PlayerNum);
-			//Debug.LogError("进入游戏房间,玩家编号：" + PlayerNum);
-
+			{
+				int PlayerNum = (int)_operationResponse.Parameters[LiteOpKey.ActorNr]; //返回进入游戏房间的玩家的编号
+				Debug.LogError("进入游戏房间,玩家编号：" + PlayerNum);
+			}
 			break;
 			case LiteOpCode.Leave:
-			Debug.LogError("离开游戏房间");
+			{
+
+				Debug.LogError("离开游戏房间");
+			}
 			break;
 			default:
+			{
+				excuteMessage(_operationResponse);
+			}
 			break;
 		}
+	}
+	void excuteMessage(OperationResponse _operationResponse)        //用于处理除了进入和离开房间以外的其他响应
+	{
+		//switch(_operationResponse.Parameters)
+		//{
+		//	default:
+		//	break;
+		//}
+
 	}
 
 	public void OnStatusChanged(StatusCode _statusCode)
