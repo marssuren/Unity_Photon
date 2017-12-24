@@ -11,10 +11,14 @@ using Lite;
 
 namespace MyServer
 {
-	class MyPeer : PeerBase
+	class MyPeer : LitePeer
 	{
+		//public MyPeer(InitRequest initRequest)
+		//	: base(initRequest)
+		//{
+		//}
 		public MyPeer(InitRequest initRequest)
-			: base(initRequest)
+			: base(initRequest.Protocol, initRequest.PhotonPeer)
 		{
 		}
 
@@ -25,27 +29,35 @@ namespace MyServer
 
 		protected override void OnOperationRequest(OperationRequest _operationRequest, SendParameters sendParameters)
 		{
-			switch(_operationRequest.OperationCode)
-			{
-				case (byte)OperationCode.Join:
-				Hashtable tGameProperties = (Hashtable)_operationRequest.Parameters[(byte)ParameterKey.GameProperties];
-				Hashtable tActorProperties =
-					(Hashtable)_operationRequest.Parameters[(byte)ParameterKey.ActorProperties];
-				string tUserName = tActorProperties[(byte)ChatEventKey.UserName].ToString();
-				OperationResponse tOperationResponse = new OperationResponse();
-				tOperationResponse.ReturnCode = 0;  //0表示返回成功
-				tOperationResponse.OperationCode = (byte)OperationCode.Join; //告诉客户端做出了哪种类型的响应
-				tOperationResponse.DebugMessage = "进入游戏房间成功！";
-				Dictionary<byte, object> tParaDic = new Dictionary<byte, object>();
-				tParaDic[(byte)ParameterKey.ActorNr] = 1;
-				tOperationResponse.Parameters = tParaDic;
-				SendOperationResponse(tOperationResponse, sendParameters);
-				break;
-				default:
-				break;
-			}
-		}
+			#region  MyPeer继承了LitePeer，直接调用父类提供的Response
+            base.OnOperationRequest(_operationRequest, sendParameters);
 
+
+			#endregion
+
+			#region MyPeer没有继承LitePeer,只是继承PeerBase时的自定义Reponse实现
+			//switch(_operationRequest.OperationCode)
+			//{
+			//	case (byte)OperationCode.Join:
+			//	Hashtable tGameProperties = (Hashtable)_operationRequest.Parameters[(byte)ParameterKey.GameProperties];
+			//	Hashtable tActorProperties =
+			//		(Hashtable)_operationRequest.Parameters[(byte)ParameterKey.ActorProperties];
+			//	string tUserName = tActorProperties[(byte)ChatEventKey.UserName].ToString();
+			//	OperationResponse tOperationResponse = new OperationResponse();
+			//	tOperationResponse.ReturnCode = 0;  //0表示返回成功
+			//	tOperationResponse.OperationCode = (byte)OperationCode.Join; //告诉客户端做出了哪种类型的响应
+			//	tOperationResponse.DebugMessage = "进入游戏房间成功！";
+			//	Dictionary<byte, object> tParaDic = new Dictionary<byte, object>();
+			//	tParaDic[(byte)ParameterKey.ActorNr] = 1;
+			//	tOperationResponse.Parameters = tParaDic;
+			//	SendOperationResponse(tOperationResponse, sendParameters);
+			//	break;
+			//	default:
+			//	break;
+			//}
+			#endregion
+		}
+         
 		protected override void OnDisconnect(DisconnectReason reasonCode, string reasonDetail)
 		{
 			throw new NotImplementedException();
