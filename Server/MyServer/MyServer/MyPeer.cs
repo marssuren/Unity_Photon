@@ -52,12 +52,12 @@ namespace MyServer
 		}
 	}
 }
-public enum ChatEventCode : byte            //仿照LiteEventCode自定义用于聊天功能的ChatEventCode
-{
-	Chat = 10,
-}
-public enum ChatEventKey : byte             //自定义用于聊天功能的ChatEventKey
-{
-	UserName = 11,
-	ChatMessage = 12,
-}
+//public enum ChatEventCode : byte            //仿照LiteEventCode自定义用于聊天功能的ChatEventCode
+//{
+//	Chat = 10,
+//}
+//public enum ChatEventKey : byte             //自定义用于聊天功能的ChatEventKey
+//{
+//	UserName = 11,
+//	ChatMessage = 12,
+//}
