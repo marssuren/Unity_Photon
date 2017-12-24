@@ -4,6 +4,7 @@ using UnityEngine;
 using ExitGames.Client.Photon;      //引用Photon命名空间
 using ExitGames.Client.Photon.Lite; //引用Lite命名空间
 using System;
+using System.Text;
 using UnityEngine.UI;
 
 public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现Photon接口
@@ -41,13 +42,38 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 	void Start()
 	{
 		//photonPeer.Connect("192.168.0.100:5055", "Lite");                 //连接
-		litePeer.Connect("192.168.0.100:5055", "Lite");
+		litePeer.Connect("192.168.0.101:5055", "MyServer");
+
+		//PhotonPeer.RegisterType(typeof(PhotonPlayer), (byte)'U', serializePlayer, DeSerializePlayer);//注册自定义类型，后两个参数为自定义的序列化和反序列化方法
 	}
+
 	void Update()
 	{
 		//photonPeer.Service();               //用来监听服务器的响应，必须不停执行
 		litePeer.Service();
 	}
+	static byte[] serializePlayer(object _player)               //序列化玩家信息
+	{
+		PhotonPlayer tPhotonPlayer = (PhotonPlayer)_player;
+		byte[] tPlayerNameBytes = UTF8Encoding.Default.GetBytes(tPhotonPlayer.PlayerName); //将自定义类中的成员变量转为字节数组
+		byte[] tbytes = new byte[4 + tPlayerNameBytes.Length];
+		int tIndex = 0;
+		Protocol.Serialize(tPhotonPlayer.PlayerNum, tbytes, ref tIndex);
+		tPlayerNameBytes.CopyTo(tbytes, tIndex);
+		return tbytes;
+	}
+	static object DeSerializePlayer(byte[] _bytes)              //反序列化玩家信息
+	{
+		PhotonPlayer tPhotonPlayer = new PhotonPlayer();
+		int tIndex = 0;
+		Protocol.Deserialize(out tPhotonPlayer.PlayerNum, _bytes, ref tIndex);
+		tPhotonPlayer.PlayerName = UTF8Encoding.Default.GetString(_bytes, tIndex, _bytes.Length - 4);
+		return tPhotonPlayer;
+	}
+
+
+
+
 	public void SendPhotonMessage()                                     //发送请求至Photon
 	{
 		Dictionary<byte, object> tParaDic = new Dictionary<byte, object>();
@@ -70,6 +96,8 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 		Hashtable tGameProperties = new Hashtable();
 
 		Hashtable tActorProperties = new Hashtable();   //玩家属性
+		//PhotonPlayer tPhotonPlayer = new PhotonPlayer();
+		//tPhotonPlayer.PlayerName = playerNameField.text;
 		tActorProperties.Add(ChatEventKey.UserName, playerNameField.text);
 		litePeer.OpJoin("Unity_Photon", tGameProperties, tActorProperties, true);          //参数1：设置游戏(房间)的名称；参数2：传递游戏的属性；参数3：传递玩家的属性；参数4：是否广播玩家属性
 	}
@@ -77,12 +105,25 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 	{
 		litePeer.OpLeave();
 	}
-	public void LiteChat()
+	public void LiteChat()              //聊天按钮点击事件
 	{
 		Hashtable tChatMessage = new Hashtable();
 		string tFieldText = "hhhh";
 		tChatMessage.Add(ChatEventKey.ChatMessage, tFieldText);
 		litePeer.OpRaiseEvent((byte)ChatEventCode.Chat, tChatMessage, true);
+	}
+	public void LiteGetMyScore()       //获得我的积分
+	{
+		OperationRequest tOp = new OperationRequest();
+		//PhotonPlayer tPhotonPlayer = new PhotonPlayer();
+		tOp.OperationCode = (byte)CustomerOperationCode.GetMyScore;
+		Dictionary<byte, object> tParaDictionary = new Dictionary<byte, object>();
+		PhotonPlayer tPlayer = new PhotonPlayer();
+		tPlayer.PlayerNum = 1;
+		tPlayer.PlayerName = playerNameField.text;
+		tParaDictionary[(byte)CustomerParameterKey.PlayerID] = tPlayer;
+		tOp.Parameters = tParaDictionary;
+		//SendPhotonMessage(tOp);
 	}
 
 	public void DebugReturn(DebugLevel _level, string _message)
@@ -231,8 +272,6 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 			break;
 		}
 	}
-
-
 }
 public enum ChatEventCode : byte            //仿照LiteEventCode自定义用于聊天功能的ChatEventCode
 {
@@ -242,7 +281,14 @@ public enum ChatEventKey : byte             //自定义用于聊天功能的Chat
 {
 	UserName = 11,
 	ChatMessage = 12,
-
+}
+public enum CustomerOperationCode : byte    //用于客户一般操作的代码
+{
+	GetMyScore = 13,
+}
+public enum CustomerParameterKey : byte
+{
+	PlayerID = 14,
 }
 
 
