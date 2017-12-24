@@ -1,0 +1,10 @@
+D:\Unity5Project\PhotonTest\Server\MyServer\MyServer\bin\MyServer.dll
+D:\Unity5Project\PhotonTest\Server\MyServer\MyServer\bin\MyServer.pdb
+D:\Unity5Project\PhotonTest\Server\MyServer\MyServer\bin\ExitGamesLibs.dll
+D:\Unity5Project\PhotonTest\Server\MyServer\MyServer\bin\Photon.SocketServer.dll
+D:\Unity5Project\PhotonTest\Server\MyServer\MyServer\bin\PhotonHostRuntimeInterfaces.dll
+D:\Unity5Project\PhotonTest\Server\MyServer\MyServer\obj\Debug\MyServer.dll
+D:\Unity5Project\PhotonTest\Server\MyServer\MyServer\obj\Debug\MyServer.pdb
+D:\Unity5Project\PhotonTest\Server\MyServer\MyServer\bin\Lite.dll
+D:\Dev\Photon\PhotonServer\Photon-OnPremise-Server-SDK__v3\ExitGames-Photon-Server-SDK_v3-4-31-10808\deploy\MyServer\bin\MyServer.dll
+D:\Dev\Photon\PhotonServer\Photon-OnPremise-Server-SDK__v3\ExitGames-Photon-Server-SDK_v3-4-31-10808\deploy\MyServer\bin\MyServer.pdb
