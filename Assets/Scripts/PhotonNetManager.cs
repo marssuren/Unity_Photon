@@ -70,15 +70,9 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 		tPhotonPlayer.PlayerName = UTF8Encoding.Default.GetString(_bytes, tIndex, _bytes.Length - 4);
 		return tPhotonPlayer;
 	}
-
-
-
-
-	public void SendPhotonMessage()                                     //发送请求至Photon
+	public void SendPhotonMessage(OperationRequest _operationRequest)                                     //发送请求至Photon
 	{
-		Dictionary<byte, object> tParaDic = new Dictionary<byte, object>();
-		tParaDic[LiteOpKey.GameId] = "1";
-		photonPeer.OpCustom(LiteOpKey.GameId, tParaDic, true);//调用客户端向服务器发送请求的函数//重载1：参数1:命令代码;参数2:命令带有的参数;参数3:命令是否可信(一般为true)
+		litePeer.OpCustom(_operationRequest, true, 0, false);//调用客户端向服务器发送请求的函数//重载1：参数1:命令代码;参数2:命令带有的参数;参数3:命令是否可信(一般为true)
 	}
 	public void SendOperationReqMsg()       //使用OperationRequest封装请求信息
 	{
@@ -96,8 +90,8 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 		Hashtable tGameProperties = new Hashtable();
 
 		Hashtable tActorProperties = new Hashtable();   //玩家属性
-		//PhotonPlayer tPhotonPlayer = new PhotonPlayer();
-		//tPhotonPlayer.PlayerName = playerNameField.text;
+														//PhotonPlayer tPhotonPlayer = new PhotonPlayer();
+														//tPhotonPlayer.PlayerName = playerNameField.text;
 		tActorProperties.Add(ChatEventKey.UserName, playerNameField.text);
 		litePeer.OpJoin("Unity_Photon", tGameProperties, tActorProperties, true);          //参数1：设置游戏(房间)的名称；参数2：传递游戏的属性；参数3：传递玩家的属性；参数4：是否广播玩家属性
 	}
@@ -116,21 +110,16 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 	{
 		OperationRequest tOp = new OperationRequest();
 		//PhotonPlayer tPhotonPlayer = new PhotonPlayer();
-		tOp.OperationCode = (byte)CustomerOperationCode.GetMyScore;
+		tOp.OperationCode = (byte)CustomOperationCode.GetMyScore;
 		Dictionary<byte, object> tParaDictionary = new Dictionary<byte, object>();
-		PhotonPlayer tPlayer = new PhotonPlayer();
-		tPlayer.PlayerNum = 1;
-		tPlayer.PlayerName = playerNameField.text;
-		tParaDictionary[(byte)CustomerParameterKey.PlayerID] = tPlayer;
+		tParaDictionary[(byte)CustomParameterKey.UserID] = 1;
 		tOp.Parameters = tParaDictionary;
-		//SendPhotonMessage(tOp);
+		SendPhotonMessage(tOp);
 	}
-
 	public void DebugReturn(DebugLevel _level, string _message)
 	{
 		Debug.LogError(_level.ToString() + "...." + _message);
 	}
-
 	public void OnEvent(EventData _eventData)
 	{
 		Debug.LogError("事件触发：" + _eventData.Parameters[LiteOpKey.ActorNr]);
@@ -178,7 +167,6 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 			break;
 		}
 	}
-
 	public void OnOperationResponse(OperationResponse _operationResponse)
 	{
 		Debug.Log("服务器返回响应：" + _operationResponse.Parameters + "   响应类型：" + _operationResponse.OperationCode);
@@ -204,11 +192,14 @@ public class PhotonNetManager : MonoBehaviour, IPhotonPeerListener      //实现
 	}
 	void excuteMessage(OperationResponse _operationResponse)        //用于处理除了进入和离开房间以外的其他响应
 	{
-		//switch(_operationResponse.Parameters)
-		//{
-		//	default:
-		//	break;
-		//}
+		switch(_operationResponse.OperationCode)
+		{
+			case (byte)CustomOperationCode.GetMyScore:
+			userAnnounce.text = "获得的积分是：" + (int)_operationResponse.Parameters[(byte)CustomParameterKey.UserID];
+			break;
+			default:
+			break;
+		}
 
 	}
 
@@ -282,13 +273,13 @@ public enum ChatEventKey : byte             //自定义用于聊天功能的Chat
 	UserName = 11,
 	ChatMessage = 12,
 }
-public enum CustomerOperationCode : byte    //用于客户一般操作的代码
+public enum CustomOperationCode : byte      //自定义的请求指令，客户端最好保持与其一致
 {
-	GetMyScore = 13,
+	GetMyScore = 1,       //获取个人积分
 }
-public enum CustomerParameterKey : byte
+public enum CustomParameterKey : byte
 {
-	PlayerID = 14,
+	UserID = 1,
 }
 
 

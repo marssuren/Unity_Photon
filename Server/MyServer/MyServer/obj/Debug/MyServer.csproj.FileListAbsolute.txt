@@ -12,3 +12,4 @@ D:\Unity5Project\Dev\Photon\PhotonServer\Photon-OnPremise-Server-SDK__v3\ExitGam
 D:\Unity5Project\Dev\Photon\PhotonServer\Photon-OnPremise-Server-SDK__v3\ExitGames-Photon-Server-SDK_v3-4-31-10808\deploy\MyServer\bin\MyServer.pdb
 D:\Unity5Project\PhotonTest\Unity_Photon\Server\MyServer\MyServer\obj\Debug\MyServer.dll
 D:\Unity5Project\PhotonTest\Unity_Photon\Server\MyServer\MyServer\obj\Debug\MyServer.pdb
+D:\Unity5Project\PhotonTest\Unity_Photon\Server\MyServer\MyServer\obj\Debug\MyServer.csprojResolveAssemblyReference.cache
