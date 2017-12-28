@@ -23,9 +23,7 @@ namespace MyServer
         {
             customerScoresDic.Add(1, 100);
             customerScoresDic.Add(2, 200);
-
         }
-
         //public MyPeer(IRpcProtocol protocol, IPhotonPeer unmanagedPeer)
         //    : base(protocol, unmanagedPeer)
         //{
